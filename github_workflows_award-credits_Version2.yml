@@ -1,0 +1,86 @@
+name: Award Credits on Merge
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  award_credits:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.repo.fork == false
+    runs-on: ubuntu-latest
+
+    env:
+      BONUS_API_URL: "https://wta-bonus-api-1064374385501.europe-west1.run.app"
+      BONUS_API_TOKEN: ${{ secrets.BONUS_API_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine credit tier
+        id: credit_tier
+        shell: bash
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          set -e
+          labels="${PR_LABELS,,}"
+          title="${PR_TITLE,,}"
+
+          if [[ "$labels" == *"documentation"* ]] || [[ "$title" == *"docs"* ]] || [[ "$title" == *"tutorial"* ]]; then
+            echo "amount=250" >> "$GITHUB_OUTPUT"
+            echo "reason=documentation" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "$labels" == *"bug"* ]] || [[ "$title" == *"bugfix"* ]] || [[ "$title" == *"fix"* ]]; then
+            echo "amount=300" >> "$GITHUB_OUTPUT"
+            echo "reason=bug-fix" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "$labels" == *"review"* ]] || [[ "$title" == *"review"* ]]; then
+            echo "amount=150" >> "$GITHUB_OUTPUT"
+            echo "reason=peer-review" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "amount=500" >> "$GITHUB_OUTPUT"
+          echo "reason=merged-pr" >> "$GITHUB_OUTPUT"
+
+      - name: Send credit award
+        shell: bash
+        env:
+          AMOUNT: ${{ steps.credit_tier.outputs.amount }}
+          REASON: ${{ steps.credit_tier.outputs.reason }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          REPO_NAME: ${{ github.repository }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -e
+
+          if [[ -z "${BONUS_API_TOKEN}" ]]; then
+            echo "Missing BONUS_API_TOKEN secret."
+            exit 1
+          fi
+
+          curl --fail --silent --show-error -X POST "${BONUS_API_URL}/api/credits/award" \
+            -H "Authorization: Bearer ${BONUS_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d @- <<JSON
+          {
+            "repo": "${REPO_NAME}",
+            "author": "${AUTHOR}",
+            "pull_request_number": ${PR_NUMBER},
+            "title": "${PR_TITLE}",
+            "credit_amount": ${AMOUNT},
+            "reason": "${REASON}"
+          }
+          JSON
+
+      - name: Success notification
+        run: |
+          echo "Credit award sent for PR #${{ github.event.pull_request.number }}."
