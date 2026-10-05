@@ -4,6 +4,8 @@
 
 ## Purpose
 
+For the detailed co-owner operating model, immutable event contract, rollback runbook, and synthetic regression matrix, see [Pending-only GitHub contribution intake contract](PENDING_ONLY_GITHUB_CONTRIBUTION_INTAKE_CONTRACT.md). This supporting document does not activate any workflow, token trust, or reward action.
+
 Create a controlled pathway from a merged GitHub pull request to a **pending** contribution record for WorkTravel Academy review. The pathway must never award points solely because a pull request is merged.
 
 ## Non-negotiable controls

@@ -5,11 +5,13 @@ on:
     paths:
       - "**.md"
       - ".github/workflows/docs-integrity.yml"
+      - "tests/synthetic_pending_intake/**"
   push:
     branches: [main]
     paths:
       - "**.md"
       - ".github/workflows/docs-integrity.yml"
+      - "tests/synthetic_pending_intake/**"
   workflow_dispatch:
 
 permissions:
@@ -46,3 +48,8 @@ jobs:
               print("\n".join(errors))
               sys.exit(1)
           print("Validated local Markdown links; no external calls or secrets used.")
+
+      - name: Run synthetic pending-intake reference suite
+        shell: bash
+        run: |
+          python3 -m unittest -v tests.synthetic_pending_intake.test_pending_intake
