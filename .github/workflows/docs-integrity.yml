@@ -1,0 +1,48 @@
+name: Documentation integrity
+
+on:
+  pull_request:
+    paths:
+      - "**.md"
+      - ".github/workflows/docs-integrity.yml"
+  push:
+    branches: [main]
+    paths:
+      - "**.md"
+      - ".github/workflows/docs-integrity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  markdown-links:
+    name: Validate local Markdown links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check local Markdown links
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          import sys
+
+          errors = []
+          pattern = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
+          for document in Path(".").rglob("*.md"):
+              text = document.read_text(encoding="utf-8")
+              if not text.strip():
+                  errors.append(f"{document}: empty Markdown file")
+                  continue
+              for target in pattern.findall(text):
+                  target = target.strip().strip("<>")
+                  if not target or target.startswith(("#", "http://", "https://", "mailto:")):
+                      continue
+                  local_path = target.split("#", 1)[0]
+                  if local_path and not (document.parent / local_path).exists():
+                      errors.append(f"{document}: missing local link target {local_path}")
+          if errors:
+              print("\n".join(errors))
+              sys.exit(1)
+          print("Validated local Markdown links; no external calls or secrets used.")
