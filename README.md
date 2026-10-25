@@ -47,6 +47,8 @@ The integration design, activation gates, data-minimisation rules, and test acce
 
 Do **not** add a workflow that directly awards credits, paste service credentials into a repository, or treat pull-request title/label text as an authorization signal.
 
+The GitHub-to-NotebookLM companion tests and publisher boundary are documented in [`docs/GITHUB_NOTEBOOKLM_SYNC.md`](docs/GITHUB_NOTEBOOKLM_SYNC.md). This repository is permanently non-publishing; the sole publisher is `saulius-systems-labs/saulius-ai-twin-gemini3x`. No Drive/NotebookLM connectivity is implied.
+
 ## Support
 
 Programme support context: <https://opencollective.com/earn-to-buildincentive-flywhee>

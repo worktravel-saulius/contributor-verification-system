@@ -5,12 +5,24 @@ on:
     paths:
       - "**.md"
       - ".github/workflows/docs-integrity.yml"
+      - ".github/workflows/notebooklm-github-sync.yml"
+      - ".github/wif-config-template.json"
+      - ".github/github-app-permissions.json"
+      - "00_MANIFESTS/**"
+      - "scripts/github_notebooklm_sync.py"
+      - "tests/test_sync.py"
       - "tests/synthetic_pending_intake/**"
   push:
     branches: [main]
     paths:
       - "**.md"
       - ".github/workflows/docs-integrity.yml"
+      - ".github/workflows/notebooklm-github-sync.yml"
+      - ".github/wif-config-template.json"
+      - ".github/github-app-permissions.json"
+      - "00_MANIFESTS/**"
+      - "scripts/github_notebooklm_sync.py"
+      - "tests/test_sync.py"
       - "tests/synthetic_pending_intake/**"
   workflow_dispatch:
 
@@ -53,3 +65,9 @@ jobs:
         shell: bash
         run: |
           python3 -m unittest -v tests.synthetic_pending_intake.test_pending_intake
+
+      - name: Run NotebookLM companion safety suite
+        shell: bash
+        run: |
+          python3 -m pip install pytest==9.1.1
+          python3 -m pytest -v tests/test_sync.py
