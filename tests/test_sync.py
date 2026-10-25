@@ -110,7 +110,7 @@ def test_wif_template_pins_exact_repository_ref_and_workflow():
     config = json.loads((ROOT / ".github" / "wif-config-template.json").read_text(encoding="utf-8"))
     condition = config["attribute_condition"]
     expected = (
-        "worktravel-saulius/contributor-verification-system/.github/workflows/"
+        "saulius-systems-labs/saulius-ai-twin-gemini3x/.github/workflows/"
         "notebooklm-github-sync.yml@refs/heads/main"
     )
 
@@ -118,9 +118,11 @@ def test_wif_template_pins_exact_repository_ref_and_workflow():
     assert config["attribute_mapping"]["attribute.repository"] == "assertion.repository"
     assert config["attribute_mapping"]["attribute.ref"] == "assertion.ref"
     assert config["attribute_mapping"]["attribute.workflow_ref"] == "assertion.workflow_ref"
-    assert "worktravel-saulius/contributor-verification-system" in condition
+    assert "saulius-systems-labs/saulius-ai-twin-gemini3x" in condition
+    assert "worktravel-saulius/contributor-verification-system" not in condition
     assert "refs/heads/main" in condition
     assert expected in condition
+    assert "github-actions-release-control" in config["provider_resource_name_template"]
     assert "SERVICE_ACCOUNT_EMAIL" in config["service_account_impersonation"]["service_account_email"]
     assert "private_key" not in json.dumps(config).lower()
 
@@ -138,17 +140,34 @@ def test_app_manifest_has_only_required_read_permissions():
     assert "discussions" in manifest["excluded_permissions"]
 
 
-def test_workflow_is_disabled_by_default_and_has_minimum_permissions():
+def test_companion_workflow_only_runs_local_safety_tests():
     workflow = (ROOT / ".github" / "workflows" / "notebooklm-github-sync.yml").read_text(encoding="utf-8")
 
-    assert "if: ${{ vars.NOTEBOOKLM_SYNC_ENABLED == 'true' }}" in workflow
     assert "permissions:\n  contents: read" in workflow
-    assert "id-token: write" in workflow
-    assert "uses: google-github-actions/auth@" in workflow
-    assert "permission-contents: read" in workflow
-    assert "permission-pull-requests: read" in workflow
-    assert "permission-discussions:" not in workflow
-    assert "NOTEBOOKLM_SYNC_ENABLED" not in workflow.split("jobs:", 1)[0]
+    assert "id-token" not in workflow
+    assert "python -m pytest tests/test_sync.py" in workflow
+    assert "google-github-actions/auth" not in workflow
+    assert "actions/create-github-app-token" not in workflow
+    assert "GITHUB_SYNC_APP_PRIVATE_KEY" not in workflow
+    assert "NOTEBOOKLM_SYNC_ENABLED" not in workflow
+    assert "www.googleapis.com" not in workflow
+
+
+def test_companion_module_has_no_google_auth_or_drive_upload_execution_path():
+    source = (ROOT / "scripts" / "github_notebooklm_sync.py").read_text(encoding="utf-8")
+
+    assert "google.auth" not in source
+    assert "upload_digest_to_drive" not in source
+    assert "www.googleapis.com" not in source
+    assert 'if __name__ == "__main__"' not in source
+
+
+def test_documentation_states_companion_is_permanently_non_publishing():
+    documentation = (ROOT / "docs" / "GITHUB_NOTEBOOKLM_SYNC.md").read_text(encoding="utf-8")
+
+    assert "permanently non-publishing companion" in documentation
+    assert "saulius-systems-labs/saulius-ai-twin-gemini3x" in documentation
+    assert "must never be added to the WIF principal set" in documentation
 
 
 def test_receipt_scaffold_is_empty_and_org_separated():

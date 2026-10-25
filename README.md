@@ -47,7 +47,7 @@ The integration design, activation gates, data-minimisation rules, and test acce
 
 Do **not** add a workflow that directly awards credits, paste service credentials into a repository, or treat pull-request title/label text as an authorization signal.
 
-The separate staged, read-only GitHub-to-NotebookLM knowledge sync and its Google WIF setup requirements are documented in [`docs/GITHUB_NOTEBOOKLM_SYNC.md`](docs/GITHUB_NOTEBOOKLM_SYNC.md). It does not award credits or imply that Drive/NotebookLM is connected.
+The GitHub-to-NotebookLM companion tests and publisher boundary are documented in [`docs/GITHUB_NOTEBOOKLM_SYNC.md`](docs/GITHUB_NOTEBOOKLM_SYNC.md). This repository is permanently non-publishing; the sole publisher is `saulius-systems-labs/saulius-ai-twin-gemini3x`. No Drive/NotebookLM connectivity is implied.
 
 ## Support
 

@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 """Create an organization-scoped, redacted GitHub digest in Google Drive."""
 
-import argparse
 import base64
-from datetime import datetime, timezone
 import json
-import os
 from pathlib import PurePosixPath
 import re
-import sys
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
@@ -16,7 +12,6 @@ from urllib.request import Request, urlopen
 
 ORGANIZATIONS = ("saulius-systems-labs", "worktravel-saulius")
 GITHUB_API = "https://api.github.com"
-DRIVE_API = "https://www.googleapis.com/drive/v3"
 MAX_DOCUMENT_BYTES = 40_000
 MAX_DOCUMENTS_PER_REPOSITORY = 20
 MAX_SUMMARIES_PER_REPOSITORY = 5
@@ -248,91 +243,3 @@ def build_digest(organization, repositories, token, sync_date):
     if not select_repositories(repositories, organization):
         sections.append("No active repositories accessible to the GitHub App were discovered.")
     return "\n".join(sections).rstrip() + "\n"
-
-
-def upload_digest_to_drive(folder_id, filename, text):
-    try:
-        import google.auth
-        from google.auth.exceptions import GoogleAuthError
-        from google.auth.transport.requests import AuthorizedSession
-        from requests.exceptions import RequestException
-    except ImportError as error:
-        raise SyncError("Install the pinned requirements from requirements.txt before syncing") from error
-
-    try:
-        credentials, _ = google.auth.default(
-            scopes=["https://www.googleapis.com/auth/drive.file"]
-        )
-        session = AuthorizedSession(credentials)
-        query = "'" + folder_id.replace("\\", "\\\\").replace("'", "\\'") + "' in parents"
-        query += " and name = '" + filename.replace("\\", "\\\\").replace("'", "\\'") + "'"
-        query += " and trashed = false"
-        response = session.get(
-            DRIVE_API + "/files",
-            params={"q": query, "fields": "files(id,name)", "pageSize": 100},
-            timeout=30,
-        )
-        response.raise_for_status()
-        matches = response.json().get("files", [])
-        metadata = json.dumps(
-            {"name": filename, "mimeType": "text/markdown", "parents": [folder_id]}
-        ).encode("utf-8")
-        media = text.encode("utf-8")
-        if matches:
-            file_id = quote(matches[0]["id"], safe="")
-            response = session.patch(
-                "https://www.googleapis.com/upload/drive/v3/files/" + file_id,
-                params={"uploadType": "media"},
-                data=media,
-                headers={"Content-Type": "text/markdown; charset=utf-8"},
-                timeout=60,
-            )
-        else:
-            boundary = "notebooklm-sync-boundary"
-            body = (
-                b"--" + boundary.encode() + b"\r\n"
-                b"Content-Type: application/json; charset=UTF-8\r\n\r\n"
-                + metadata + b"\r\n--" + boundary.encode() + b"\r\n"
-                b"Content-Type: text/markdown; charset=UTF-8\r\n\r\n"
-                + media + b"\r\n--" + boundary.encode() + b"--"
-            )
-            response = session.post(
-                "https://www.googleapis.com/upload/drive/v3/files",
-                params={"uploadType": "multipart", "fields": "id,name"},
-                data=body,
-                headers={"Content-Type": "multipart/related; boundary=" + boundary},
-                timeout=60,
-            )
-        response.raise_for_status()
-    except GoogleAuthError as error:
-        raise SyncError("Google Drive authentication failed; verify WIF configuration") from error
-    except (RequestException, ValueError, KeyError) as error:
-        raise SyncError("Google Drive upload failed; verify WIF and folder permissions") from error
-
-
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--organization", required=True, choices=ORGANIZATIONS)
-    parser.add_argument("--drive-folder-id", required=True)
-    args = parser.parse_args()
-
-    token = os.environ.get("GITHUB_APP_TOKEN")
-    if not token:
-        raise SyncError("GITHUB_APP_TOKEN is required from a read-only GitHub App installation")
-    if not args.drive_folder_id.strip():
-        raise SyncError("A restricted Google Drive folder ID is required")
-
-    repositories = select_repositories(get_installation_repositories(token), args.organization)
-    date = datetime.now(timezone.utc).date().isoformat()
-    digest = build_digest(args.organization, repositories, token, date)
-    filename = "github-knowledge-digest-" + date + ".md"
-    upload_digest_to_drive(args.drive_folder_id, filename, digest)
-    print("Uploaded redacted digest for " + args.organization + " to the configured Drive folder.")
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except SyncError as error:
-        print("Sync failed: " + str(error), file=sys.stderr)
-        sys.exit(1)

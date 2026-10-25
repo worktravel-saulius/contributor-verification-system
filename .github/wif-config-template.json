@@ -1,21 +1,22 @@
 {
-  "purpose": "GitHub Actions to Google Cloud Workload Identity Federation (template only; fill resource IDs in Google Cloud, never commit credentials)",
+  "purpose": "WIF template for the sole scheduled publisher in saulius-systems-labs/saulius-ai-twin-gemini3x; this repository is not a publisher",
   "attribute_mapping": {
     "google.subject": "assertion.sub",
     "attribute.repository": "assertion.repository",
     "attribute.ref": "assertion.ref",
     "attribute.workflow_ref": "assertion.workflow_ref"
   },
-  "attribute_condition": "assertion.repository == 'worktravel-saulius/contributor-verification-system' && assertion.ref == 'refs/heads/main' && assertion.workflow_ref == 'worktravel-saulius/contributor-verification-system/.github/workflows/notebooklm-github-sync.yml@refs/heads/main'",
-  "provider_resource_name_template": "projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/providers/PROVIDER_ID",
+  "attribute_condition": "assertion.repository == 'saulius-systems-labs/saulius-ai-twin-gemini3x' && assertion.ref == 'refs/heads/main' && assertion.workflow_ref == 'saulius-systems-labs/saulius-ai-twin-gemini3x/.github/workflows/notebooklm-github-sync.yml@refs/heads/main'",
+  "provider_resource_name_template": "projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github-actions-release-control/providers/PROVIDER_ID",
   "service_account_impersonation": {
     "service_account_email": "SERVICE_ACCOUNT_EMAIL",
     "required_binding": "roles/iam.workloadIdentityUser",
-    "principal_set_template": "principalSet://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/attribute.repository/worktravel-saulius/contributor-verification-system"
+    "principal_set_template": "principalSet://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github-actions-release-control/attribute.repository/saulius-systems-labs/saulius-ai-twin-gemini3x"
   },
   "notes": [
     "Template contains placeholders, not a configured provider or proof of a successful WIF exchange.",
     "Do not use a service-account JSON key.",
-    "Permit only the exact repository, main ref, and notebooklm-github-sync.yml workflow_ref."
+    "Restrict trust to the exact sole publisher repository, main ref, and notebooklm-github-sync.yml workflow_ref.",
+    "Do not grant this identity to worktravel-saulius/contributor-verification-system; its workflow only runs local validation tests."
   ]
 }
