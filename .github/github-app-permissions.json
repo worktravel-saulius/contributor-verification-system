@@ -1,0 +1,25 @@
+{
+  "purpose": "Least-privilege permission manifest for the staged GitHub-to-NotebookLM digest",
+  "repository_permissions": {
+    "contents": "read",
+    "pull_requests": "read"
+  },
+  "implicit_permissions": {
+    "metadata": "read"
+  },
+  "organization_permissions": {},
+  "subscribed_events": [],
+  "endpoint_coverage": {
+    "GET /installation/repositories": "Discover repositories in this App installation; metadata:read is implicit.",
+    "GET /repos/{owner}/{repo}/git/trees/{branch}": "Select README.md and docs/**/*.md; contents:read.",
+    "GET /repos/{owner}/{repo}/contents/{path}": "Read selected Markdown; contents:read.",
+    "GET /repos/{owner}/{repo}/pulls": "Read recent PR summaries; pull_requests:read.",
+    "GET /repos/{owner}/{repo}/releases": "Read release summaries; contents:read."
+  },
+  "excluded_permissions": {
+    "contents": "No write permission; this integration does not modify source repositories.",
+    "pull_requests": "No write permission; this integration does not create or review PRs.",
+    "discussions": "Not requested; no discussion data is collected.",
+    "administration": "Not requested; no repository settings are changed."
+  }
+}

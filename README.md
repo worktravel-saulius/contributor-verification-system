@@ -47,6 +47,8 @@ The integration design, activation gates, data-minimisation rules, and test acce
 
 Do **not** add a workflow that directly awards credits, paste service credentials into a repository, or treat pull-request title/label text as an authorization signal.
 
+The separate staged, read-only GitHub-to-NotebookLM knowledge sync and its Google WIF setup requirements are documented in [`docs/GITHUB_NOTEBOOKLM_SYNC.md`](docs/GITHUB_NOTEBOOKLM_SYNC.md). It does not award credits or imply that Drive/NotebookLM is connected.
+
 ## Support
 
 Programme support context: <https://opencollective.com/earn-to-buildincentive-flywhee>
